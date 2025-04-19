@@ -1,3 +1,5 @@
+//create-medicine-page.tsx
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -13,6 +15,7 @@ const medicineSchema = z.object({
   expiry_date: z.string().min(1, 'Expiry date is required'),
   condition: z.string().min(1, 'Condition is required'),
   location: z.string().min(1, 'Location is required'),
+  status: z.string().min(1, 'Status is required'),
 });
 
 type MedicineFormData = z.infer<typeof medicineSchema>;
@@ -49,17 +52,24 @@ export function CreateMedicinePage() {
         const fileName = `${Math.random()}.${fileExt}`;
         const filePath = `${user?.id}/${fileName}`;
 
+        console.log('Uploading to bucket: medicine-images');
+        console.log('File path:', filePath);
+
         const { error: uploadError } = await supabase.storage
           .from('medicine-images')
           .upload(filePath, imageFile);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Image upload error:', uploadError);
+          throw uploadError;
+        }
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data: publicUrlData } = supabase.storage
           .from('medicine-images')
           .getPublicUrl(filePath);
 
-        imageUrl = publicUrl;
+        imageUrl = publicUrlData.publicUrl;
+        console.log('Image uploaded successfully:', imageUrl);
       }
 
       const { error: insertError } = await supabase.from('medicines').insert([
@@ -71,7 +81,10 @@ export function CreateMedicinePage() {
         },
       ]);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Database insertion error:', insertError);
+        throw insertError;
+      }
 
       navigate('/dashboard');
     } catch (error) {
@@ -85,9 +98,7 @@ export function CreateMedicinePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">
-          List a New Medicine
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">List a New Medicine</h1>
 
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-md">
@@ -97,10 +108,7 @@ export function CreateMedicinePage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
               Medicine Name
             </label>
             <input
@@ -109,16 +117,11 @@ export function CreateMedicinePage() {
               id="name"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
-            {errors.name && (
-              <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-            )}
+            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
           </div>
 
           <div>
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
               Description
             </label>
             <textarea
@@ -128,17 +131,12 @@ export function CreateMedicinePage() {
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
             {errors.description && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.description.message}
-              </p>
+              <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="quantity"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="quantity" className="block text-sm font-medium text-gray-700">
               Quantity
             </label>
             <input
@@ -149,17 +147,12 @@ export function CreateMedicinePage() {
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
             {errors.quantity && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.quantity.message}
-              </p>
+              <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="expiry_date"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="expiry_date" className="block text-sm font-medium text-gray-700">
               Expiry Date
             </label>
             <input
@@ -169,17 +162,12 @@ export function CreateMedicinePage() {
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
             {errors.expiry_date && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.expiry_date.message}
-              </p>
+              <p className="mt-1 text-sm text-red-600">{errors.expiry_date.message}</p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="condition"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="condition" className="block text-sm font-medium text-gray-700">
               Condition
             </label>
             <select
@@ -193,17 +181,12 @@ export function CreateMedicinePage() {
               <option value="partially_used">Partially Used</option>
             </select>
             {errors.condition && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.condition.message}
-              </p>
+              <p className="mt-1 text-sm text-red-600">{errors.condition.message}</p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="location"
-              className="block text-sm font-medium text-gray-700"
-            >
+            <label htmlFor="location" className="block text-sm font-medium text-gray-700">
               Pickup Location
             </label>
             <input
@@ -213,17 +196,28 @@ export function CreateMedicinePage() {
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
             {errors.location && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.location.message}
-              </p>
+              <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
             )}
           </div>
 
           <div>
-            <label
-              htmlFor="image"
-              className="block text-sm font-medium text-gray-700"
+            <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+              Status
+            </label>
+            <select
+              {...register('status')}
+              id="status"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             >
+              <option value="available">Available</option>
+              <option value="claimed">Claimed</option>
+              <option value="expired">Expired</option>
+            </select>
+            {errors.status && <p className="mt-1 text-sm text-red-600">{errors.status.message}</p>}
+          </div>
+
+          <div>
+            <label htmlFor="image" className="block text-sm font-medium text-gray-700">
               Medicine Image
             </label>
             <input
