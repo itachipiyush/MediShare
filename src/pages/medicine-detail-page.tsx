@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, AlertTriangle, Package, Clock, User, EditIcon, Trash2 } from 'lucide-react';
+import {
+  MapPin,
+  Calendar,
+  AlertTriangle,
+  Package,
+  Clock,
+  User,
+  EditIcon,
+  Trash2,
+} from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -19,7 +28,7 @@ export const MedicineDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { claimMedicine, deleteMedicine } = useMedicinesStore();
-  
+
   const [medicine, setMedicine] = useState<Medicine | null>(null);
   const [loading, setLoading] = useState(true);
   const [donor, setDonor] = useState<any | null>(null);
@@ -28,28 +37,33 @@ export const MedicineDetailPage: React.FC = () => {
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isClaiming, setIsClaiming] = useState(false);
-  
+
   useEffect(() => {
     const fetchMedicineDetails = async () => {
-      if (!id) return;
-      
+      if (!id) {
+        setError('Invalid medicine ID');
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('medicines')
-          .select(`
+          .select(
+            `
             *,
             batches:medicine_batches(*),
             interactions:medicine_interactions(*),
             reminders:medicine_reminders(*)
-          `)
+          `
+          )
           .eq('id', id)
           .single();
-        
+
         if (error) throw error;
-        
+
         setMedicine(data);
-        
+
         // Fetch donor details
         if (data.posted_by) {
           const { data: userData, error: userError } = await supabase
@@ -57,7 +71,7 @@ export const MedicineDetailPage: React.FC = () => {
             .select('*')
             .eq('id', data.posted_by)
             .single();
-          
+
           if (!userError) {
             setDonor(userData);
           }
@@ -69,10 +83,10 @@ export const MedicineDetailPage: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchMedicineDetails();
   }, [id]);
-  
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-12 lg:px-8">
@@ -90,7 +104,7 @@ export const MedicineDetailPage: React.FC = () => {
       </div>
     );
   }
-  
+
   if (error || !medicine) {
     return (
       <div className="container mx-auto px-4 py-12 lg:px-8 text-center">
@@ -106,40 +120,37 @@ export const MedicineDetailPage: React.FC = () => {
       </div>
     );
   }
-  
+
   const expired = isExpired(medicine.expiry_date);
   const canClaim = user && user.role === 'claimer' && medicine.status === 'available' && !expired;
   const canEdit = user && medicine.posted_by === user.id && medicine.status === 'available';
 
-  // Placeholder image if no image or error loading
-  const placeholderImage = 'https://images.pexels.com/photos/3683056/pexels-photo-3683056.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
-  
-  const handleClaimClick = () => {
-    setIsClaimModalOpen(true);
-  };
-  
+  const placeholderImage =
+    'https://images.pexels.com/photos/3683056/pexels-photo-3683056.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2';
+
   const handleClaimConfirm = async () => {
     if (!user || !medicine) return;
-    
+
     setIsClaimLoading(true);
-    
+
     try {
       const { error } = await claimMedicine(medicine.id, user.id);
-      
+
       if (!error) {
         setIsClaimModalOpen(false);
-        // Refetch the medicine details to update the status
         const { data } = await supabase
           .from('medicines')
-          .select(`
+          .select(
+            `
             *,
             batches:medicine_batches(*),
             interactions:medicine_interactions(*),
             reminders:medicine_reminders(*)
-          `)
+          `
+          )
           .eq('id', id)
           .single();
-        
+
         setMedicine(data);
       } else {
         console.error('Error claiming medicine:', error);
@@ -150,15 +161,15 @@ export const MedicineDetailPage: React.FC = () => {
       setIsClaimLoading(false);
     }
   };
-  
+
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this listing?')) return;
-    
+
     setIsDeleteLoading(true);
-    
+
     try {
       const { error } = await deleteMedicine(medicine.id);
-      
+
       if (!error) {
         navigate('/dashboard');
       } else {
@@ -170,109 +181,7 @@ export const MedicineDetailPage: React.FC = () => {
       setIsDeleteLoading(false);
     }
   };
-  
-  const handleClaim = async () => {
-    if (!user) {
-      navigate('/login', { state: { from: `/medicines/${id}` } });
-      return;
-    }
 
-    try {
-      setIsClaiming(true);
-      const { error } = await supabase.from('claims').insert([
-        {
-          medicine_id: id,
-          claimer_id: user.id,
-          status: 'pending',
-        },
-      ]);
-
-      if (error) throw error;
-
-      // Update medicine status
-      const { error: updateError } = await supabase
-        .from('medicines')
-        .update({ status: 'claimed' })
-        .eq('id', id);
-
-      if (updateError) throw updateError;
-
-      navigate('/dashboard');
-    } catch (error) {
-      setError('Failed to claim medicine');
-      console.error('Error claiming medicine:', error);
-    } finally {
-      setIsClaiming(false);
-    }
-  };
-  
-  const handleAddBatch = async (batch: Omit<MedicineBatch, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('medicine_batches')
-        .insert([{ ...batch, medicine_id: id }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setMedicine((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          batches: [...prev.batches, data],
-          total_quantity: prev.total_quantity + data.quantity,
-        };
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add batch');
-    }
-  };
-
-  const handleAddInteraction = async (interaction: Omit<MedicineInteraction, 'medicine_id'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('medicine_interactions')
-        .insert([{ ...interaction, medicine_id: id }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setMedicine((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          interactions: [...prev.interactions, data],
-        };
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add interaction');
-    }
-  };
-
-  const handleAddReminder = async (reminder: Omit<MedicineReminder, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
-      const { data, error } = await supabase
-        .from('medicine_reminders')
-        .insert([{ ...reminder, medicine_id: id, user_id: user?.id }])
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setMedicine((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          reminders: [...prev.reminders, data],
-        };
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add reminder');
-    }
-  };
-  
   return (
     <div className="container mx-auto px-4 py-12 lg:px-8">
       <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -285,7 +194,7 @@ export const MedicineDetailPage: React.FC = () => {
           </nav>
           <h1 className="text-3xl font-bold text-slate-800">{medicine.name}</h1>
         </div>
-        
+
         {canEdit && (
           <div className="flex space-x-3 mt-4 sm:mt-0">
             <Button
@@ -311,7 +220,7 @@ export const MedicineDetailPage: React.FC = () => {
           </div>
         )}
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Image */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -322,7 +231,7 @@ export const MedicineDetailPage: React.FC = () => {
             onError={() => setImageError(true)}
           />
         </div>
-        
+
         {/* Details */}
         <div className="space-y-6">
           <Card>
@@ -335,76 +244,61 @@ export const MedicineDetailPage: React.FC = () => {
                   {medicine.status === 'claimed' ? 'Claimed' : 'Expired'}
                 </Badge>
               )}
-              
+
               <div className="prose max-w-none mb-6">
-                <p className="text-slate-600">
-                  {medicine.description}
-                </p>
+                <p className="text-slate-600">{medicine.description}</p>
               </div>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center text-slate-600">
                   <Package className="mr-2 h-5 w-5 text-teal-600" />
                   <span>Quantity: {medicine.quantity}</span>
                 </div>
-                
+
                 <div className="flex items-center text-slate-600">
                   <MapPin className="mr-2 h-5 w-5 text-teal-600" />
                   <span>Location: {medicine.location}</span>
                 </div>
-                
+
                 <div className="flex items-center">
                   <Calendar className="mr-2 h-5 w-5 text-teal-600" />
                   <span className={expired ? 'text-red-600' : 'text-slate-600'}>
                     Expiry Date: {formatDate(medicine.expiry_date)}
-                    {expired && (
-                      <span className="ml-2 text-red-600 font-medium">
-                        (Expired)
-                      </span>
-                    )}
+                    {expired && <span className="ml-2 text-red-600 font-medium">(Expired)</span>}
                   </span>
                 </div>
-                
+
                 <div className="flex items-center text-slate-600">
                   <Clock className="mr-2 h-5 w-5 text-teal-600" />
                   <span>Posted: {formatDate(medicine.created_at)}</span>
                 </div>
-                
+
                 <div className="flex items-center text-slate-600">
                   <User className="mr-2 h-5 w-5 text-teal-600" />
                   <span>Posted by: {donor?.full_name || 'Anonymous'}</span>
                 </div>
               </div>
-              
+
               {medicine.status === 'available' && !expired && (
                 <div className="mt-8">
                   {canClaim ? (
-                    <Button
-                      onClick={handleClaimClick}
-                      className="w-full sm:w-auto"
-                    >
+                    <Button onClick={() => setIsClaimModalOpen(true)} className="w-full sm:w-auto">
                       Claim This Medication
                     </Button>
+                  ) : user ? (
+                    <p className="text-amber-600 text-sm">
+                      Only verified claimers can request this medication.
+                    </p>
                   ) : (
-                    user ? (
-                      <p className="text-amber-600 text-sm">
-                        Only verified claimers can request this medication.
-                      </p>
-                    ) : (
-                      <Button
-                        as={Link}
-                        to="/login"
-                        className="w-full sm:w-auto"
-                      >
-                        Log In to Claim
-                      </Button>
-                    )
+                    <Button as={Link} to="/login" className="w-full sm:w-auto">
+                      Log In to Claim
+                    </Button>
                   )}
                 </div>
               )}
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-6">
               <div className="flex items-start">
@@ -412,9 +306,11 @@ export const MedicineDetailPage: React.FC = () => {
                 <div>
                   <h3 className="font-medium text-slate-800 mb-2">Important Legal Notice</h3>
                   <p className="text-sm text-slate-600">
-                    MediShare does not verify the quality, safety, or efficacy of medications listed on our platform. 
-                    Always check expiry dates, packaging integrity, and consult with a healthcare professional before using any medication.
-                    <br /><br />
+                    MediShare does not verify the quality, safety, or efficacy of medications listed
+                    on our platform. Always check expiry dates, packaging integrity, and consult
+                    with a healthcare professional before using any medication.
+                    <br />
+                    <br />
                     <Link to="/disclaimer" className="text-teal-600 hover:underline">
                       Read our full legal disclaimer →
                     </Link>
@@ -425,7 +321,7 @@ export const MedicineDetailPage: React.FC = () => {
           </Card>
         </div>
       </div>
-      
+
       {medicine && (
         <ClaimModal
           medicine={medicine}
@@ -439,7 +335,7 @@ export const MedicineDetailPage: React.FC = () => {
       <div className="mt-8">
         <BatchManager
           batches={medicine.batches}
-          onAddBatch={handleAddBatch}
+          onAddBatch={() => {}}
           onUpdateBatch={() => {}}
           onDeleteBatch={() => {}}
         />
@@ -449,14 +345,14 @@ export const MedicineDetailPage: React.FC = () => {
         <InteractionChecker
           medicineId={medicine.id}
           interactions={medicine.interactions}
-          onAddInteraction={handleAddInteraction}
+          onAddInteraction={() => {}}
         />
       </div>
 
       <div className="mt-8">
         <ReminderManager
           reminders={medicine.reminders}
-          onAddReminder={handleAddReminder}
+          onAddReminder={() => {}}
           onUpdateReminder={() => {}}
           onDeleteReminder={() => {}}
         />

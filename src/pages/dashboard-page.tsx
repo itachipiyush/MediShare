@@ -41,7 +41,17 @@ export const DashboardPage: React.FC = () => {
   const { getUserMedicines, getUserClaims } = useMedicinesStore();
 
   const [userMedicines, setUserMedicines] = useState<Medicine[]>([]);
-  const [userClaims, setUserClaims] = useState<any[]>([]);
+  interface UserClaim {
+    id: string;
+    medicines: {
+      id: string;
+      name: string;
+      description: string;
+      image_url: string | null;
+    };
+  }
+
+  const [userClaims, setUserClaims] = useState<UserClaim[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

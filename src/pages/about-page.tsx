@@ -60,7 +60,8 @@ export const AboutPage: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">About MediShare</h1>
           <p className="text-xl text-white/90 max-w-2xl mx-auto">
-            Connecting communities through medicine sharing to reduce waste and improve healthcare access
+            Connecting communities through medicine sharing to reduce waste and improve healthcare
+            access
           </p>
         </div>
       </div>
@@ -72,7 +73,10 @@ export const AboutPage: React.FC = () => {
             <Heart className="h-12 w-12 text-primary-600 mx-auto mb-4" />
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Mission</h2>
             <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-              MediShare is dedicated to reducing medical waste and improving access to healthcare by creating a platform where unused, sealed medications can be shared with those in need. We believe in building stronger, healthier communities through responsible medication sharing.
+              MediShare is dedicated to reducing medical waste and improving access to healthcare by
+              creating a platform where unused, sealed medications can be shared with those in need.
+              We believe in building stronger, healthier communities through responsible medication
+              sharing.
             </p>
           </div>
         </div>
@@ -91,7 +95,8 @@ export const AboutPage: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">List Medications</h3>
                   <p className="text-gray-700">
-                    Donors can easily list their unused, sealed medications with details like expiry date and condition.
+                    Donors can easily list their unused, sealed medications with details like expiry
+                    date and condition.
                   </p>
                 </div>
               </div>
@@ -103,7 +108,9 @@ export const AboutPage: React.FC = () => {
                   <Users className="h-6 w-6 text-primary-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Connect with Those in Need</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Connect with Those in Need
+                  </h3>
                   <p className="text-gray-700">
                     Verified users and organizations can browse and claim medications they need.
                   </p>
@@ -119,7 +126,8 @@ export const AboutPage: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Prevent Waste</h3>
                   <p className="text-gray-700">
-                    Help reduce medical waste by ensuring unused medications reach those who need them.
+                    Help reduce medical waste by ensuring unused medications reach those who need
+                    them.
                   </p>
                 </div>
               </div>
@@ -133,7 +141,8 @@ export const AboutPage: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Make a Difference</h3>
                   <p className="text-gray-700">
-                    Contribute to better healthcare access and make a positive impact in your community.
+                    Contribute to better healthcare access and make a positive impact in your
+                    community.
                   </p>
                 </div>
               </div>
@@ -295,8 +304,20 @@ export const AboutPage: React.FC = () => {
                   {isSubmitting ? (
                     <>
                       <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </svg>
                       Sending...
                     </>
@@ -323,8 +344,7 @@ export const AboutPage: React.FC = () => {
           <Button
             as={Link}
             to="/"
-            className="bg-white text-primary-600 hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
-            size="lg"
+            className="bg-white hover:bg-gray-100 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold text-sm sm:text-base lg:text-lg py-3 px-6 rounded-lg"
           >
             Get Started
           </Button>

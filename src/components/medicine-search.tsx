@@ -56,12 +56,13 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
             <Select
               onChange={(e) => onFilter(e.target.value)}
               className="w-full"
-            >
-              <option value="">All Statuses</option>
-              <option value="available">Available</option>
-              <option value="claimed">Claimed</option>
-              <option value="expired">Expired</option>
-            </Select>
+              options={[
+                { value: '', label: 'All Statuses' },
+                { value: 'available', label: 'Available' },
+                { value: 'claimed', label: 'Claimed' },
+                { value: 'expired', label: 'Expired' },
+              ]}
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -70,12 +71,13 @@ export const MedicineSearch: React.FC<MedicineSearchProps> = ({
             <Select
               onChange={(e) => onSort(e.target.value)}
               className="w-full"
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="expiry">Expiry Date</option>
-              <option value="name">Name</option>
-            </Select>
+              options={[
+                { value: 'newest', label: 'Newest First' },
+                { value: 'oldest', label: 'Oldest First' },
+                { value: 'expiry', label: 'Expiry Date' },
+                { value: 'name', label: 'Name' },
+              ]}
+            />
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Search, CheckCircle, Users, Package, Clock } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
+import { Card } from '../components/ui/card';
 import { MedicinesGrid } from '../components/medicines/medicines-grid';
 import { useMedicinesStore } from '../store/medicines-store';
 import { useAuthStore } from '../store/auth-store';
@@ -10,15 +10,29 @@ import { useAuthStore } from '../store/auth-store';
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { medicines, fetchMedicines, isLoading } = useMedicinesStore();
-  const [featuredMedicines, setFeaturedMedicines] = useState([]);
+  const { medicines, fetchMedicines } = useMedicinesStore();
+  const [featuredMedicines, setFeaturedMedicines] = useState<
+    {
+      id: string;
+      name: string;
+      description: string;
+      quantity: number;
+      expiry_date: string;
+      image_url?: string;
+      location: string;
+      posted_by: string;
+      status: 'available' | 'claimed' | 'expired';
+      created_at: string;
+    }[]
+  >([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const loadFeaturedMedicines = async () => {
       await fetchMedicines();
       setFeaturedMedicines(medicines.slice(0, 3));
     };
-    
+
     loadFeaturedMedicines();
   }, [fetchMedicines, medicines]);
 
@@ -30,6 +44,11 @@ export const HomePage: React.FC = () => {
     } else {
       navigate('/dashboard');
     }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate(`/medicines?search=${searchQuery}`);
   };
 
   return (
@@ -50,27 +69,47 @@ export const HomePage: React.FC = () => {
               Share Unused Medications, Save Lives
             </h1>
             <p className="mt-6 text-xl text-white/90 max-w-3xl">
-              Connect with those in need by donating your unused, sealed medications. Together, we can reduce medical waste and improve access to healthcare.
+              Connect with those in need by donating your unused, sealed medications. Together, we
+              can reduce medical waste and improve access to healthcare.
             </p>
-            <div className="mt-10 space-x-4">
+            <div className="mt-10 space-y-4 sm:space-y-0 sm:flex sm:space-x-4">
               <Button
                 as={Link}
                 to="/medicines"
-                className="bg-primary-600 text-white hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
-                size="lg"
+                className="w-full sm:w-auto bg-primary-600 text-white hover:bg-primary-700 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold text-sm sm:text-base lg:text-lg py-2 sm:py-3 px-4 sm:px-6"
               >
                 Browse Medicines
               </Button>
               <Button
                 variant="outline"
-                className="bg-white/10 text-white border-white hover:bg-white/30 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold"
-                size="lg"
+                className="w-full sm:w-auto bg-white/10 text-white border-white hover:bg-white/30 shadow-lg hover:shadow-xl transition-all duration-200 font-semibold text-sm sm:text-base lg:text-lg py-2 sm:py-3 px-4 sm:px-6"
                 onClick={handleDonateClick}
               >
                 Donate Medicines
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="py-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <form onSubmit={handleSearch} className="flex items-center space-x-4">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search for medicines..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+            <Button type="submit" className="bg-primary-600 text-white hover:bg-primary-700">
+              Search
+            </Button>
+          </form>
         </div>
       </div>
 
@@ -85,7 +124,8 @@ export const HomePage: React.FC = () => {
               A Better Way to Share Medications
             </p>
             <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
-              Our platform makes it easy to donate and claim unused medications while ensuring safety and compliance.
+              Our platform makes it easy to donate and claim unused medications while ensuring
+              safety and compliance.
             </p>
           </div>
 
@@ -100,7 +140,8 @@ export const HomePage: React.FC = () => {
                     List Your Medications
                   </h3>
                   <p className="mt-2 text-base text-gray-500">
-                    Easily list your unused, sealed medications with details like expiry date, quantity, and condition.
+                    Easily list your unused, sealed medications with details like expiry date,
+                    quantity, and condition.
                   </p>
                 </div>
               </Card>
@@ -124,11 +165,10 @@ export const HomePage: React.FC = () => {
                   <Clock className="h-6 w-6" />
                 </div>
                 <div className="ml-16">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    Prevent Waste
-                  </h3>
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Prevent Waste</h3>
                   <p className="mt-2 text-base text-gray-500">
-                    Help reduce medical waste by ensuring unused medications reach those who need them.
+                    Help reduce medical waste by ensuring unused medications reach those who need
+                    them.
                   </p>
                 </div>
               </Card>
@@ -138,14 +178,36 @@ export const HomePage: React.FC = () => {
                   <Heart className="h-6 w-6" />
                 </div>
                 <div className="ml-16">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    Make a Difference
-                  </h3>
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Make a Difference</h3>
                   <p className="mt-2 text-base text-gray-500">
-                    Contribute to better healthcare access and make a positive impact in your community.
+                    Contribute to better healthcare access and make a positive impact in your
+                    community.
                   </p>
                 </div>
               </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Statistics Section */}
+      <div className="py-12 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div>
+              <CheckCircle className="h-12 w-12 text-primary-600 mx-auto" />
+              <h3 className="mt-4 text-2xl font-bold text-gray-900">10,000+</h3>
+              <p className="mt-2 text-lg text-gray-500">Medications Donated</p>
+            </div>
+            <div>
+              <Users className="h-12 w-12 text-primary-600 mx-auto" />
+              <h3 className="mt-4 text-2xl font-bold text-gray-900">5,000+</h3>
+              <p className="mt-2 text-lg text-gray-500">Registered Users</p>
+            </div>
+            <div>
+              <Heart className="h-12 w-12 text-primary-600 mx-auto" />
+              <h3 className="mt-4 text-2xl font-bold text-gray-900">2,000+</h3>
+              <p className="mt-2 text-lg text-gray-500">Lives Impacted</p>
             </div>
           </div>
         </div>

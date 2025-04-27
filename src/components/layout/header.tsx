@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Heart, PlusCircle, User, LogOut, Star } from 'lucide-react';
 import { useAuthStore } from '../../store/auth-store';
@@ -12,6 +12,8 @@ export const Header: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -21,22 +23,45 @@ export const Header: React.FC = () => {
     setMobileMenuOpen(false);
   };
 
+  const toggleDropdown = () => {
+    setDropdownOpen(prev => !prev);
+  };
+
+  const closeDropdown = () => {
+    setDropdownOpen(false);
+  };
+
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
   const handleSignOut = async () => {
     await signOut();
+    closeDropdown();
     navigate('/');
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        closeDropdown();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-slate-200 shadow-sm">
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex items-center space-x-2 text-teal-600"
             onClick={closeMobileMenu}
           >
@@ -46,32 +71,32 @@ export const Header: React.FC = () => {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className={`text-sm font-medium transition-colors hover:text-teal-600 ${
                 isActive('/') ? 'text-teal-600' : 'text-slate-700'
               }`}
             >
               Home
             </Link>
-            <Link 
-              to="/medicines" 
+            <Link
+              to="/medicines"
               className={`text-sm font-medium transition-colors hover:text-teal-600 ${
                 isActive('/medicines') ? 'text-teal-600' : 'text-slate-700'
               }`}
             >
               Medications
             </Link>
-            <Link 
-              to="/about" 
+            <Link
+              to="/about"
               className={`text-sm font-medium transition-colors hover:text-teal-600 ${
                 isActive('/about') ? 'text-teal-600' : 'text-slate-700'
               }`}
             >
               About
             </Link>
-            <Link 
-              to="/disclaimer" 
+            <Link
+              to="/disclaimer"
               className={`text-sm font-medium transition-colors hover:text-teal-600 ${
                 isActive('/disclaimer') ? 'text-teal-600' : 'text-slate-700'
               }`}
@@ -85,12 +110,7 @@ export const Header: React.FC = () => {
             {user ? (
               <div className="flex items-center space-x-4">
                 {user.role === 'donor' && (
-                  <Button 
-                    as={Link} 
-                    to="/medicines/new" 
-                    size="sm"
-                    className="flex items-center"
-                  >
+                  <Button as={Link} to="/medicines/new" size="sm" className="flex items-center">
                     <PlusCircle className="mr-1 h-4 w-4" />
                     Donate
                   </Button>
@@ -111,38 +131,41 @@ export const Header: React.FC = () => {
                   )}
                 </Button>
                 <NotificationBell />
-                <div className="relative group">
-                  <Button variant="outline" size="sm" className="flex items-center">
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={toggleDropdown}
+                    className="flex items-center px-4 py-2 text-sm font-medium text-slate-700 border rounded-md hover:bg-slate-100"
+                  >
                     <User className="mr-2 h-4 w-4" />
-                    <span className="mr-1">
-                      {user.full_name?.split(' ')[0] || 'Account'}
-                    </span>
-                  </Button>
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden group-hover:block">
-                    <div className="p-1">
-                      <Link 
-                        to="/dashboard" 
-                        className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-md"
-                        onClick={closeMobileMenu}
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        to="/profile"
-                        className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-md"
-                        onClick={closeMobileMenu}
-                      >
-                        Profile
-                      </Link>
-                      <button 
-                        onClick={handleSignOut} 
-                        className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center"
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign Out
-                      </button>
+                    {user.full_name?.split(' ')[0] || 'Account'}
+                  </button>
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                      <div className="p-1">
+                        <Link
+                          to="/dashboard"
+                          className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-md"
+                          onClick={closeDropdown}
+                        >
+                          Dashboard
+                        </Link>
+                        <Link
+                          to="/profile"
+                          className="block w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-md"
+                          onClick={closeDropdown}
+                        >
+                          Profile
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md flex items-center"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -158,11 +181,7 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden"
-            onClick={toggleMobileMenu}
-            aria-label="Toggle mobile menu"
-          >
+          <button className="md:hidden" onClick={toggleMobileMenu} aria-label="Toggle mobile menu">
             {mobileMenuOpen ? (
               <X className="h-6 w-6 text-slate-600" />
             ) : (
@@ -176,8 +195,8 @@ export const Header: React.FC = () => {
       {mobileMenuOpen && (
         <div className="md:hidden bg-white pb-4 px-4 border-b border-slate-200">
           <nav className="flex flex-col space-y-4 pt-2">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               onClick={closeMobileMenu}
               className={`text-sm font-medium px-3 py-2 rounded-md transition-colors hover:bg-slate-100 ${
                 isActive('/') ? 'text-teal-600 bg-teal-50' : 'text-slate-700'
@@ -185,8 +204,8 @@ export const Header: React.FC = () => {
             >
               Home
             </Link>
-            <Link 
-              to="/medicines" 
+            <Link
+              to="/medicines"
               onClick={closeMobileMenu}
               className={`text-sm font-medium px-3 py-2 rounded-md transition-colors hover:bg-slate-100 ${
                 isActive('/medicines') ? 'text-teal-600 bg-teal-50' : 'text-slate-700'
@@ -194,8 +213,8 @@ export const Header: React.FC = () => {
             >
               Medications
             </Link>
-            <Link 
-              to="/about" 
+            <Link
+              to="/about"
               onClick={closeMobileMenu}
               className={`text-sm font-medium px-3 py-2 rounded-md transition-colors hover:bg-slate-100 ${
                 isActive('/about') ? 'text-teal-600 bg-teal-50' : 'text-slate-700'
@@ -203,8 +222,8 @@ export const Header: React.FC = () => {
             >
               About
             </Link>
-            <Link 
-              to="/disclaimer" 
+            <Link
+              to="/disclaimer"
               onClick={closeMobileMenu}
               className={`text-sm font-medium px-3 py-2 rounded-md transition-colors hover:bg-slate-100 ${
                 isActive('/disclaimer') ? 'text-teal-600 bg-teal-50' : 'text-slate-700'
@@ -216,8 +235,8 @@ export const Header: React.FC = () => {
               <>
                 <div className="border-t border-slate-200 my-2 pt-2">
                   {user.role === 'donor' && (
-                    <Link 
-                      to="/medicines/new" 
+                    <Link
+                      to="/medicines/new"
                       onClick={closeMobileMenu}
                       className="text-sm font-medium flex items-center px-3 py-2 rounded-md bg-teal-50 text-teal-600"
                     >
@@ -238,8 +257,8 @@ export const Header: React.FC = () => {
                       </span>
                     )}
                   </Link>
-                  <Link 
-                    to="/dashboard" 
+                  <Link
+                    to="/dashboard"
                     onClick={closeMobileMenu}
                     className="text-sm font-medium flex items-center px-3 py-2 mt-2 rounded-md hover:bg-slate-100"
                   >
@@ -254,8 +273,8 @@ export const Header: React.FC = () => {
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </Link>
-                  <button 
-                    onClick={handleSignOut} 
+                  <button
+                    onClick={handleSignOut}
                     className="w-full text-sm font-medium flex items-center px-3 py-2 mt-2 rounded-md text-red-600 hover:bg-red-50"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -265,18 +284,18 @@ export const Header: React.FC = () => {
               </>
             ) : (
               <div className="border-t border-slate-200 my-2 pt-2 flex flex-col space-y-2">
-                <Button 
-                  as={Link} 
-                  to="/login" 
-                  variant="outline" 
+                <Button
+                  as={Link}
+                  to="/login"
+                  variant="outline"
                   className="w-full justify-center"
                   onClick={closeMobileMenu}
                 >
                   Log In
                 </Button>
-                <Button 
-                  as={Link} 
-                  to="/signup" 
+                <Button
+                  as={Link}
+                  to="/signup"
                   className="w-full justify-center"
                   onClick={closeMobileMenu}
                 >
