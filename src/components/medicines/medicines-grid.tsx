@@ -5,15 +5,19 @@ import { Medicine } from '../../store/medicines-store';
 interface MedicinesGridProps {
   medicines: Medicine[];
   onClaimClick?: (medicine: Medicine) => void;
+  onEditClick?: (medicine: Medicine) => void;
+  onDeleteClick?: (medicine: Medicine) => void;
   loading?: boolean;
   emptyMessage?: string;
 }
 
-export const MedicinesGrid: React.FC<MedicinesGridProps> = ({ 
-  medicines, 
+export const MedicinesGrid: React.FC<MedicinesGridProps> = ({
+  medicines,
   onClaimClick,
+  onEditClick,
+  onDeleteClick,
   loading = false,
-  emptyMessage = "No medications found."
+  emptyMessage = 'No medications found.',
 }) => {
   if (loading) {
     return (
@@ -35,11 +39,13 @@ export const MedicinesGrid: React.FC<MedicinesGridProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {medicines.map((medicine) => (
+      {medicines.map(medicine => (
         <MedicineCard
           key={medicine.id}
           medicine={medicine}
           onClaimClick={onClaimClick}
+          onEditClick={onEditClick} // Pass onEditClick
+          onDeleteClick={onDeleteClick} // Pass onDeleteClick
         />
       ))}
     </div>

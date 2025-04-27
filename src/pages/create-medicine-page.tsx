@@ -1,14 +1,15 @@
 // //create-medicine-page.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/auth-store';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { Button } from '../components/ui/button';
 
 // Fix for default Leaflet marker icons
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -33,7 +34,6 @@ const medicineSchema = z.object({
   expiry_date: z.string().min(1, 'Expiry date is required'),
   condition: z.string().min(1, 'Condition is required'),
   location: z.string().min(1, 'Location is required'),
-  status: z.string().min(1, 'Status is required'),
 });
 
 type MedicineFormData = z.infer<typeof medicineSchema>;
@@ -68,6 +68,8 @@ export function CreateMedicinePage() {
       setError(null);
 
       let imageUrl = null;
+
+      // Upload image if provided
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
@@ -88,6 +90,7 @@ export function CreateMedicinePage() {
         imageUrl = publicUrlData.publicUrl;
       }
 
+      // Insert medicine data into the database
       const { error: insertError } = await supabase.from('medicines').insert([
         {
           ...data,
@@ -101,6 +104,7 @@ export function CreateMedicinePage() {
         throw insertError;
       }
 
+      // Navigate to the dashboard after successful submission
       navigate('/dashboard');
     } catch (error) {
       setError('Failed to create medicine listing');
@@ -111,14 +115,6 @@ export function CreateMedicinePage() {
   };
 
   const LocationMarker = () => {
-    const map = useMap();
-
-    useEffect(() => {
-      if (markerPosition) {
-        map.setView(markerPosition, map.getZoom()); // Center the map on the marker
-      }
-    }, [markerPosition, map]);
-
     useMapEvents({
       click(e) {
         const { lat, lng } = e.latlng;
@@ -278,13 +274,15 @@ export function CreateMedicinePage() {
               readOnly
               className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={handleUseCurrentLocation}
-              className="mt-2 inline-flex items-center px-4 py-2 border border-blue-500 shadow-sm text-sm font-medium rounded-md text-blue-500 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
+              className="mt-2"
             >
               Use My Current Location
-            </button>
+            </Button>
           </div>
 
           {/* Upload Image */}
@@ -302,17 +300,16 @@ export function CreateMedicinePage() {
 
           {/* Submit Button */}
           <div className="mt-6">
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
+              isLoading={uploading}
               disabled={uploading}
-              className={`w-full py-3 px-4 text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                uploading
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' // Disabled state
-                  : 'bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-400' // Replace with your app's primary color
-              }`}
+              className="w-full"
             >
               {uploading ? 'Uploading...' : 'Submit'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

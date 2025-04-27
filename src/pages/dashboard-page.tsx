@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { MedicinesGrid } from '../components/medicines/medicines-grid';
 import { Medicine, useMedicinesStore } from '../store/medicines-store';
 import { useAuthStore } from '../store/auth-store';
+// Removed unused imports for Edit and Trash
 
 interface MedicineCardProps {
   medicine: {
@@ -19,7 +20,27 @@ interface MedicineCardProps {
 }
 
 export const MedicineCard: React.FC<MedicineCardProps> = ({ medicine }) => {
-  console.log('Medicine image URL:', medicine.image_url);
+  const navigate = useNavigate();
+  const { deleteMedicine } = useMedicinesStore();
+  const { user } = useAuthStore(); // Get the current user
+
+  const handleEdit = () => {
+    navigate(`/medicines/edit/${medicine.id}`); // Redirect to the edit page
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this medicine?')) {
+      try {
+        await deleteMedicine(medicine.id); // Call the delete function
+        alert('Medicine deleted successfully.');
+        window.location.reload(); // Reload the page to reflect changes
+      } catch (error) {
+        console.error('Error deleting medicine:', error);
+        alert('Failed to delete medicine.');
+      }
+    }
+  };
+
   return (
     <div className="border rounded shadow-sm overflow-hidden">
       <img
@@ -30,6 +51,16 @@ export const MedicineCard: React.FC<MedicineCardProps> = ({ medicine }) => {
       <div className="p-4">
         <h3 className="text-lg font-bold">{medicine.name}</h3>
         <p className="text-sm text-gray-600">{medicine.description}</p>
+        {user?.role === 'donor' && (
+          <div className="flex justify-between mt-4">
+            <Button variant="primary" size="sm" onClick={handleEdit}>
+              Edit
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleDelete}>
+              Delete
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -38,7 +69,7 @@ export const MedicineCard: React.FC<MedicineCardProps> = ({ medicine }) => {
 export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isLoading: isAuthLoading } = useAuthStore();
-  const { getUserMedicines, getUserClaims } = useMedicinesStore();
+  const { getUserMedicines, getUserClaims, deleteMedicine } = useMedicinesStore();
 
   const [userMedicines, setUserMedicines] = useState<Medicine[]>([]);
   interface UserClaim {
@@ -62,13 +93,19 @@ export const DashboardPage: React.FC = () => {
 
       try {
         const medicines = await getUserMedicines(user.id);
-
-        // No need to generate signed URLs for public images
         setUserMedicines(medicines);
 
         if (user.role === 'claimer') {
           const claims = await getUserClaims(user.id);
-          setUserClaims(claims);
+          setUserClaims(
+            claims.map(claim => ({
+              ...claim,
+              medicines: {
+                ...claim.medicines,
+                image_url: claim.medicines.image_url ?? null, // Convert undefined to null
+              },
+            }))
+          );
         }
       } catch (err) {
         console.error('Error fetching user data:', err);
@@ -84,6 +121,32 @@ export const DashboardPage: React.FC = () => {
       fetchUserData();
     }
   }, [user, isAuthLoading, navigate, getUserMedicines, getUserClaims]);
+
+  const handleEdit = (medicine: Medicine) => {
+    navigate(`/medicines/${medicine.id}/edit`); // Ensure the URL matches the route
+  };
+
+  const handleDelete = async (medicine: Medicine) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${medicine.name}"? This action cannot be undone.`
+    );
+
+    if (confirmed) {
+      try {
+        const result = await deleteMedicine(medicine.id, medicine.image_url);
+
+        if (result.success) {
+          setUserMedicines(prev => prev.filter(m => m.id !== medicine.id));
+          alert('Medicine deleted successfully.');
+        } else {
+          alert('Failed to delete medicine.');
+        }
+      } catch (error) {
+        console.error('Error deleting medicine:', error);
+        alert('Failed to delete medicine.');
+      }
+    }
+  };
 
   if (isAuthLoading || !user) {
     return (
@@ -109,49 +172,47 @@ export const DashboardPage: React.FC = () => {
         )}
       </div>
 
-      {/* Summary Cards */}
+      {/* Dashboard Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Account Type */}
         <Card>
           <CardContent className="p-6">
-            <h2 className="font-semibold text-slate-500 mb-1">Account Type</h2>
-            <p className="text-2xl font-bold text-slate-800 capitalize">{user.role}</p>
+            <h3 className="text-lg font-bold text-slate-800">Account Type</h3>
+            <p className="text-sm text-slate-600 mt-2 capitalize">{user.role}</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="font-semibold text-slate-500 mb-1">
-              {user.role === 'donor' ? 'Donations' : 'Claims'}
-            </h2>
-            <p className="text-2xl font-bold text-slate-800">
-              {user.role === 'donor' ? userMedicines.length : userClaims.length}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Donations */}
+        {user.role === 'donor' && (
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-bold text-slate-800">Donations</h3>
+              <p className="text-sm text-slate-600 mt-2">{userMedicines.length}</p>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="font-semibold text-slate-500 mb-1">Available</h2>
-            <p className="text-2xl font-bold text-slate-800">
-              {user.role === 'donor'
-                ? userMedicines.filter(m => m.status === 'available').length
-                : '-'}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Available Medications */}
+        {user.role === 'donor' && (
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-bold text-slate-800">Available</h3>
+              <p className="text-sm text-slate-600 mt-2">
+                {userMedicines.filter(medicine => medicine.status === 'available').length}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card>
-          <CardContent className="p-6">
-            <h2 className="font-semibold text-slate-500 mb-1">
-              {user.role === 'donor' ? 'Claimed' : 'Active Claims'}
-            </h2>
-            <p className="text-2xl font-bold text-slate-800">
-              {user.role === 'donor'
-                ? userMedicines.filter(m => m.status === 'claimed').length
-                : userClaims.length}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Claimed Medications */}
+        {user.role === 'claimer' && (
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="text-lg font-bold text-slate-800">Claimed</h3>
+              <p className="text-sm text-slate-600 mt-2">{userClaims.length}</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Donor: My Medications */}
@@ -165,6 +226,8 @@ export const DashboardPage: React.FC = () => {
               medicines={userMedicines}
               loading={isLoading}
               emptyMessage="You haven't listed any medications yet. Click 'Donate Medication' to get started."
+              onEditClick={handleEdit}
+              onDeleteClick={handleDelete}
             />
           </CardContent>
         </Card>

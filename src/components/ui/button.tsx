@@ -11,48 +11,64 @@ type ButtonBaseProps = {
   isLoading?: boolean;
   className?: string;
   children?: React.ReactNode;
+  disabled?: boolean;
 };
 
-type ButtonAsButton = ButtonBaseProps & Omit<HTMLMotionProps<'button'>, keyof ButtonBaseProps> & {
-  as?: 'button';
-};
+type ButtonAsButton = ButtonBaseProps &
+  Omit<HTMLMotionProps<'button'>, keyof ButtonBaseProps> & {
+    as?: 'button';
+  };
 
-type ButtonAsLink = ButtonBaseProps & Omit<React.ComponentPropsWithoutRef<typeof Link>, keyof ButtonBaseProps> & {
-  as: typeof Link;
-};
+type ButtonAsLink = ButtonBaseProps &
+  Omit<React.ComponentPropsWithoutRef<typeof Link>, keyof ButtonBaseProps> & {
+    as: typeof Link;
+  };
 
 type ButtonProps = ButtonAsButton | ButtonAsLink;
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', isLoading, children, disabled, as: Component = motion.button, ...props }, ref) => {
+export const Button = React.forwardRef<HTMLElement, ButtonProps>(
+  (
+    {
+      className,
+      variant = 'primary',
+      size = 'md',
+      isLoading,
+      children,
+      disabled,
+      as: Component = motion.button,
+      ...props
+    },
+    ref
+  ) => {
+    const baseStyles =
+      'inline-flex items-center justify-center rounded-md font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
+
+    const variantStyles = {
+      primary: `${theme.gradients.primary} text-white hover:opacity-90`,
+      secondary: `${theme.gradients.secondary} text-white hover:opacity-90`,
+      outline: 'border border-secondary-200 bg-white hover:bg-secondary-50 text-secondary-700',
+      ghost: 'hover:bg-secondary-50 text-secondary-700',
+      danger: `${theme.gradients.danger} text-white hover:opacity-90`,
+    };
+
+    const sizeStyles = {
+      sm: 'px-3 py-1.5 text-sm',
+      md: 'px-4 py-2 text-base',
+      lg: 'px-6 py-3 text-lg',
+    };
+
     return (
       <Component
-        ref={ref}
-        className={cn(
-          'inline-flex items-center justify-center rounded-md font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
-          {
-            [theme.gradients.primary + ' text-white hover:opacity-90']: variant === 'primary',
-            [theme.gradients.secondary + ' text-white hover:opacity-90']: variant === 'secondary',
-            'border border-secondary-200 bg-white hover:bg-secondary-50 text-secondary-700': variant === 'outline',
-            'hover:bg-secondary-50 text-secondary-700': variant === 'ghost',
-            [theme.gradients.danger + ' text-white hover:opacity-90']: variant === 'danger',
-            'px-3 py-1.5 text-sm': size === 'sm',
-            'px-4 py-2 text-base': size === 'md',
-            'px-6 py-3 text-lg': size === 'lg',
-          },
-          className
-        )}
+        ref={ref as React.Ref<HTMLButtonElement & HTMLAnchorElement>}
+        type={Component === motion.button ? 'button' : undefined}
+        className={cn(baseStyles, variantStyles[variant], sizeStyles[size], className)}
         whileHover={hoverScale}
         whileTap={tapScale}
         disabled={isLoading || disabled}
         {...props}
       >
         {isLoading ? (
-          <motion.div
-            className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          />
+          <motion.div className="h-4 w-4 animate-spin rounded-full border-2" />
         ) : (
           children
         )}
