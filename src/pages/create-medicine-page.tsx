@@ -1,12 +1,12 @@
 // //create-medicine-page.tsx
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/auth-store';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Button } from '../components/ui/button';
@@ -46,6 +46,8 @@ export function CreateMedicinePage() {
   const [error, setError] = useState<string | null>(null);
   const [markerPosition, setMarkerPosition] = useState<[number, number] | null>([51.505, -0.09]); // Default position
   const [currentLocation, setCurrentLocation] = useState<string | null>('51.505, -0.09');
+
+  const mapRef = useRef<L.Map | null>(null);
 
   const {
     register,
@@ -114,7 +116,23 @@ export function CreateMedicinePage() {
     }
   };
 
-  const LocationMarker = () => {
+  const LocationMarker: React.FC<{
+    markerPosition: [number, number] | null;
+    setMarkerPosition: React.Dispatch<React.SetStateAction<[number, number] | null>>;
+    setCurrentLocation: React.Dispatch<React.SetStateAction<string | null>>;
+    setValue: (
+      name: keyof MedicineFormData,
+      value: MedicineFormData[keyof MedicineFormData]
+    ) => void;
+  }> = ({ markerPosition, setMarkerPosition, setCurrentLocation, setValue }) => {
+    const map = useMap();
+
+    useEffect(() => {
+      if (markerPosition) {
+        map.setView(markerPosition, map.getZoom()); // Center the map on the marker
+      }
+    }, [markerPosition, map]);
+
     useMapEvents({
       click(e) {
         const { lat, lng } = e.latlng;
@@ -137,6 +155,12 @@ export function CreateMedicinePage() {
           const locationString = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
           setCurrentLocation(locationString);
           setValue('location', locationString);
+
+          // Move the map to the new marker position
+          const map = mapRef.current; // Access the map instance
+          if (map) {
+            map.setView([latitude, longitude], map.getZoom());
+          }
         },
         () => {
           setError('Unable to retrieve location.');
@@ -229,7 +253,6 @@ export function CreateMedicinePage() {
             </label>
             <select
               {...register('condition')}
-              id="condition"
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             >
               <option value="">Select condition</option>
@@ -263,7 +286,12 @@ export function CreateMedicinePage() {
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution="&copy; OpenStreetMap contributors"
                 />
-                <LocationMarker />
+                <LocationMarker
+                  markerPosition={markerPosition}
+                  setMarkerPosition={setMarkerPosition}
+                  setCurrentLocation={setCurrentLocation}
+                  setValue={setValue}
+                />
               </MapContainer>
             </div>
             <input
