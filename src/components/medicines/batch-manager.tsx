@@ -13,7 +13,12 @@ interface BatchManagerProps {
   onDeleteBatch: (batchId: string) => void;
 }
 
-export function BatchManager({ batches, onAddBatch, onUpdateBatch, onDeleteBatch }: BatchManagerProps) {
+export function BatchManager({
+  batches,
+  onAddBatch,
+  onUpdateBatch,
+  onDeleteBatch,
+}: BatchManagerProps) {
   const [newBatch, setNewBatch] = useState({
     quantity: 0,
     expiry_date: '',
@@ -34,7 +39,7 @@ export function BatchManager({ batches, onAddBatch, onUpdateBatch, onDeleteBatch
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold">Manage Batches</h3>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <Label htmlFor="quantity">Quantity</Label>
@@ -43,7 +48,7 @@ export function BatchManager({ batches, onAddBatch, onUpdateBatch, onDeleteBatch
             type="number"
             min="1"
             value={newBatch.quantity}
-            onChange={(e) => setNewBatch({ ...newBatch, quantity: parseInt(e.target.value) })}
+            onChange={e => setNewBatch({ ...newBatch, quantity: parseInt(e.target.value) })}
           />
         </div>
 
@@ -53,7 +58,7 @@ export function BatchManager({ batches, onAddBatch, onUpdateBatch, onDeleteBatch
             id="expiry_date"
             type="date"
             value={newBatch.expiry_date}
-            onChange={(e) => setNewBatch({ ...newBatch, expiry_date: e.target.value })}
+            onChange={e => setNewBatch({ ...newBatch, expiry_date: e.target.value })}
           />
         </div>
 
@@ -62,7 +67,9 @@ export function BatchManager({ batches, onAddBatch, onUpdateBatch, onDeleteBatch
           <Select
             id="condition"
             value={newBatch.condition}
-            onChange={(e) => setNewBatch({ ...newBatch, condition: e.target.value as 'new' | 'used' | 'expired' })}
+            onChange={e =>
+              setNewBatch({ ...newBatch, condition: e.target.value as 'new' | 'used' | 'expired' })
+            }
           >
             <option value="new">New</option>
             <option value="used">Used</option>
@@ -78,11 +85,8 @@ export function BatchManager({ batches, onAddBatch, onUpdateBatch, onDeleteBatch
       <div className="mt-6 space-y-4">
         <h4 className="font-medium">Existing Batches</h4>
         <div className="space-y-2">
-          {batches.map((batch) => (
-            <div
-              key={batch.id}
-              className="flex items-center justify-between p-4 border rounded-lg"
-            >
+          {batches.map(batch => (
+            <div key={batch.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <p className="font-medium">Quantity: {batch.quantity}</p>
                 <p className="text-sm text-gray-500">
@@ -91,18 +95,10 @@ export function BatchManager({ batches, onAddBatch, onUpdateBatch, onDeleteBatch
                 <p className="text-sm text-gray-500">Condition: {batch.condition}</p>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onUpdateBatch(batch)}
-                >
+                <Button variant="outline" size="sm" onClick={() => onUpdateBatch(batch)}>
                   Edit
                 </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  onClick={() => onDeleteBatch(batch.id)}
-                >
+                <Button variant="danger" size="sm" onClick={() => onDeleteBatch(batch.id)}>
                   Delete
                 </Button>
               </div>
@@ -112,4 +108,4 @@ export function BatchManager({ batches, onAddBatch, onUpdateBatch, onDeleteBatch
       </div>
     </div>
   );
-} 
+}
