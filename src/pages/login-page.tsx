@@ -8,7 +8,6 @@ import { Card, CardContent } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { useAuthStore } from '../store/auth-store';
-import { motion } from 'framer-motion';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -46,12 +45,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <motion.div
-        className="w-full max-w-md"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-      >
+      <div className="w-full max-w-md">
         {/* Logo and Welcome Text */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center text-teal-600">
@@ -67,14 +61,9 @@ export const LoginPage: React.FC = () => {
           <CardContent className="p-6">
             {/* Error Message */}
             {error && (
-              <motion.div
-                className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm">
                 {error}
-              </motion.div>
+              </div>
             )}
 
             {/* Login Form */}
@@ -117,7 +106,7 @@ export const LoginPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 };

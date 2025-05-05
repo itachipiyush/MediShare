@@ -8,6 +8,7 @@ import { Loading } from '../components/ui/loading';
 import { ErrorBoundary } from '../components/error-boundary';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { MedicineDetailsModal } from '../components/medicines/medicine-details-modal'; // Import the modal
 import { format } from 'date-fns';
 
 const ITEMS_PER_PAGE = 12;
@@ -22,6 +23,8 @@ export const MedicinesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null); // State for selected medicine
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false); // State for modal visibility
 
   useEffect(() => {
     fetchMedicines();
@@ -54,7 +57,7 @@ export const MedicinesPage: React.FC = () => {
     // Apply search filter
     if (searchQuery) {
       result = result.filter(
-        (medicine) =>
+        medicine =>
           medicine.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           medicine.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -62,7 +65,7 @@ export const MedicinesPage: React.FC = () => {
 
     // Apply status filter
     if (statusFilter) {
-      result = result.filter((medicine) => medicine.status === statusFilter);
+      result = result.filter(medicine => medicine.status === statusFilter);
     }
 
     // Apply sorting
@@ -74,7 +77,9 @@ export const MedicinesPage: React.FC = () => {
         result.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
         break;
       case 'expiry':
-        result.sort((a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime());
+        result.sort(
+          (a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
+        );
         break;
       case 'name':
         result.sort((a, b) => a.name.localeCompare(b.name));
@@ -99,6 +104,11 @@ export const MedicinesPage: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleViewDetails = (medicine: Medicine) => {
+    setSelectedMedicine(medicine); // Set the selected medicine
+    setIsDetailsModalOpen(true); // Open the modal
   };
 
   const paginatedMedicines = filteredMedicines.slice(
@@ -133,30 +143,20 @@ export const MedicinesPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-slate-900">Medicines</h1>
-          <Button onClick={() => navigate('/medicines/new')}>
-            Add New Medicine
-          </Button>
+          <Button onClick={() => navigate('/medicines/new')}>Add New Medicine</Button>
         </div>
 
-        <MedicineSearch
-          onSearch={handleSearch}
-          onFilter={handleFilter}
-          onSort={handleSort}
-        />
+        <MedicineSearch onSearch={handleSearch} onFilter={handleFilter} onSort={handleSort} />
 
         {filteredMedicines.length === 0 ? (
           <div className="text-center py-12">
-            <h3 className="text-xl font-medium text-slate-600">
-              No medicines found
-            </h3>
-            <p className="text-slate-500 mt-2">
-              Try adjusting your search or filters
-            </p>
+            <h3 className="text-xl font-medium text-slate-600">No medicines found</h3>
+            <p className="text-slate-500 mt-2">Try adjusting your search or filters</p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-              {paginatedMedicines.map((medicine) => (
+              {paginatedMedicines.map(medicine => (
                 <Card key={medicine.id} className="p-6">
                   <div className="space-y-4">
                     <div className="aspect-w-16 aspect-h-9">
@@ -167,12 +167,8 @@ export const MedicinesPage: React.FC = () => {
                       />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-900">
-                        {medicine.name}
-                      </h3>
-                      <p className="text-slate-600 mt-1 line-clamp-2">
-                        {medicine.description}
-                      </p>
+                      <h3 className="text-lg font-semibold text-slate-900">{medicine.name}</h3>
+                      <p className="text-slate-600 mt-1 line-clamp-2">{medicine.description}</p>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-slate-500">
@@ -183,8 +179,8 @@ export const MedicinesPage: React.FC = () => {
                           medicine.status === 'available'
                             ? 'bg-green-100 text-green-800'
                             : medicine.status === 'claimed'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-red-100 text-red-800'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
                         }`}
                       >
                         {medicine.status}
@@ -192,7 +188,7 @@ export const MedicinesPage: React.FC = () => {
                     </div>
                     <Button
                       className="w-full"
-                      onClick={() => navigate(`/medicines/${medicine.id}`)}
+                      onClick={() => handleViewDetails(medicine)} // Open modal on click
                     >
                       View Details
                     </Button>
@@ -212,6 +208,13 @@ export const MedicinesPage: React.FC = () => {
             )}
           </>
         )}
+
+        {/* Medicine Details Modal */}
+        <MedicineDetailsModal
+          isOpen={isDetailsModalOpen}
+          onClose={() => setIsDetailsModalOpen(false)}
+          medicine={selectedMedicine}
+        />
       </div>
     </ErrorBoundary>
   );
